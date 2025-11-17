@@ -342,3 +342,97 @@ function tanaserobertbroker_enable_lazy_loading( $default, $tag_name, $context )
        return $default;
 }
 add_filter( 'wp_lazy_loading_enabled', 'tanaserobertbroker_enable_lazy_loading', 10, 3 );
+
+/**
+ * Remove non-essential assets that commonly trigger PageSpeed Insights warnings
+ * about unused JavaScript and CSS.
+ */
+function tanaserobertbroker_strip_unused_assets() {
+       // Disable emoji scripts and styles on the front end.
+       remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+       remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+       remove_action( 'wp_print_styles', 'print_emoji_styles' );
+       remove_action( 'admin_print_styles', 'print_emoji_styles' );
+
+       // Remove the oEmbed discovery script on the front end.
+       wp_deregister_script( 'wp-embed' );
+
+       // Drop block editor styles when classic layouts are used on the front end.
+       wp_dequeue_style( 'wp-block-library' );
+       wp_dequeue_style( 'wp-block-library-theme' );
+       wp_dequeue_style( 'global-styles' );
+}
+add_action( 'wp_enqueue_scripts', 'tanaserobertbroker_strip_unused_assets', 20 );
+
+/**
+ * Prevent loading the Dashicons font for visitors to reduce render-blocking CSS.
+ */
+function tanaserobertbroker_remove_dashicons_for_guests() {
+       if ( is_user_logged_in() ) {
+               return;
+       }
+
+       wp_dequeue_style( 'dashicons' );
+}
+add_action( 'wp_enqueue_scripts', 'tanaserobertbroker_remove_dashicons_for_guests', 100 );
+
+/**
+ * Defer non-critical scripts to improve total blocking time without altering
+ * dependencies like jQuery.
+ *
+ * @param string $tag    The `<script>` tag for the enqueued script.
+ * @param string $handle The script's registered handle.
+ * @param string $src    The script source.
+ *
+ * @return string Possibly modified script tag.
+ */
+function tanaserobertbroker_defer_scripts( $tag, $handle, $src ) {
+       if ( is_admin() || is_customize_preview() ) {
+               return $tag;
+       }
+
+       $deferred_handles = array(
+               'astra-theme-js',
+               'astra-addon-js',
+               'astra-navigation',
+               'astra-scroll-to-top',
+               'comment-reply',
+               'wp-custom-header',
+       );
+
+       // Do not defer jQuery or its dependencies.
+       if ( in_array( $handle, array( 'jquery', 'jquery-core', 'jquery-migrate' ), true ) ) {
+               return $tag;
+       }
+
+       if ( in_array( $handle, $deferred_handles, true ) ) {
+               return sprintf( '<script src="%s" defer></script>' . "\n", esc_url( $src ) );
+       }
+
+       return $tag;
+}
+add_filter( 'script_loader_tag', 'tanaserobertbroker_defer_scripts', 10, 3 );
+
+/**
+ * Improve Largest Contentful Paint by prioritizing the first rendered image.
+ *
+ * @param array        $attr       Attributes for the image markup.
+ * @param WP_Post      $attachment Image attachment object.
+ * @param string|int[] $size       Requested size.
+ *
+ * @return array Filtered attributes.
+ */
+function tanaserobertbroker_prioritize_first_image( $attr, $attachment, $size ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
+       static $seen_first_image = false;
+
+       if ( is_admin() || $seen_first_image ) {
+               return $attr;
+       }
+
+       $attr['fetchpriority'] = 'high';
+       $attr['loading']       = 'eager';
+       $seen_first_image      = true;
+
+       return $attr;
+}
+add_filter( 'wp_get_attachment_image_attributes', 'tanaserobertbroker_prioritize_first_image', 10, 3 );
