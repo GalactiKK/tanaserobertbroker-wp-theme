@@ -62,3 +62,126 @@ Astra local fonts feature is based on Webfonts Loader by WordPress Themes Team (
 Licensed under MIT ( https://github.com/WPTT/webfont-loader/blob/master/LICENSE )
 
 /* Note: The CSS files are loaded from assets/css/ folder. */
+
+/* -------------------------------------------------------------------------- */
+/* Custom Overrides                                                            */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Make the header transparent with a subtle brand tint so it inherits the page
+ * background while still carrying the requested color (#E6BE78).
+ * Apply the tint to both the default header and the sticky header states so the
+ * treatment is visible before and after scroll.
+ * The !important flags ensure the override wins against the compiled Astra CSS.
+ */
+.site-header,
+header#masthead,
+.main-header-bar,
+.ast-theme-transparent-header .main-header-bar,
+.ast-theme-transparent-header .site-header,
+.ast-transparent-header-active .main-header-bar,
+.ast-transparent-header-active .site-header,
+.ast-primary-header-bar,
+.ast-desktop .ast-primary-header,
+.ast-desktop .ast-primary-header-bar,
+.ast-mobile-header-wrap,
+.ast-above-header,
+.ast-below-header,
+body:not(.ast-header-sticked) .site-header,
+body:not(.ast-header-sticked) header#masthead,
+body:not(.ast-header-sticked) .main-header-bar {
+    /* Softer initial tint so the hero remains fully visible at the top */
+    background-color: rgba(230, 190, 120, 0.42) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid rgba(230, 190, 120, 0.3) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.ast-header-sticky-active .main-header-bar,
+.ast-sticky-header-active .main-header-bar,
+.ast-header-sticked,
+.ast-header-sticked .main-header-bar {
+    /* Slightly stronger opacity after scroll to preserve contrast */
+    background-color: rgba(230, 190, 120, 0.68) !important;
+    border-bottom: 1px solid rgba(230, 190, 120, 0.42) !important;
+}
+
+.site-header .site-branding a,
+.main-header-menu > .menu-item > a,
+.main-header-menu .menu-link,
+.ast-header-break-point .main-header-menu .menu-link,
+.ast-mobile-header-wrap .ast-builder-menu-1 .menu-link,
+.ast-mobile-header-wrap .ast-button,
+.ast-desktop .ast-builder-menu-1 .menu-link,
+.ast-desktop .ast-builder-menu-1 .menu-link .ast-menu-toggle {
+    color: #1f1f1f !important;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    text-transform: none;
+    transition: color 0.2s ease;
+}
+
+.main-header-menu .menu-item:hover > a,
+.main-header-menu .menu-item:focus-within > a,
+.ast-builder-menu-1 .menu-item.current-menu-item > a,
+.ast-builder-menu-1 .menu-item.current-menu-ancestor > a {
+    color: #8a5f16 !important;
+}
+
+.site-header .ast-button,
+.site-header .ast-custom-button,
+.site-header .menu-toggle,
+.ast-mobile-header-wrap .menu-toggle {
+    border-color: rgba(31, 31, 31, 0.4) !important;
+    color: #1f1f1f !important;
+}
+
+.site-header a:focus-visible,
+.main-header-menu .menu-link:focus-visible,
+.ast-mobile-header-wrap .menu-toggle:focus-visible {
+    outline: 2px solid #8a5f16;
+    outline-offset: 2px;
+}
+
+.ast-header-break-point .main-header-menu,
+.ast-header-break-point .main-header-bar,
+.ast-header-break-point .ast-mobile-header-wrap {
+    background-color: rgba(230, 190, 120, 0.58) !important;
+}
+
+.ast-header-break-point .main-header-menu .menu-item {
+    border-bottom: 1px solid rgba(138, 95, 22, 0.15);
+}
+
+.ast-header-break-point .main-header-menu .menu-link {
+    padding-top: 0.85em;
+    padding-bottom: 0.85em;
+}
+
+/* Ensure the drop-down mobile drawer inherits the transparent tint */
+.ast-header-break-point .main-header-menu .menu-item > .submenu-expand,
+.ast-header-break-point .ast-mobile-header-wrap .ast-builder-menu-1,
+.ast-header-break-point .ast-mobile-header-wrap .ast-builder-menu-1 .main-header-menu,
+.ast-header-break-point .ast-mobile-header-wrap .ast-builder-menu-1 .main-header-menu .menu-item {
+    background-color: rgba(230, 190, 120, 0.58) !important;
+}
+
+/* Keep the slide-out panel transparent on modern Astra mobile nav */
+.ast-mobile-popup-drawer.active .ast-mobile-popup-inner,
+.ast-mobile-popup-drawer .ast-mobile-popup-content,
+.ast-mobile-popup-drawer .ast-mobile-header-content,
+.ast-mobile-header-wrap .ast-mobile-menu-buttons {
+    background-color: rgba(230, 190, 120, 0.58) !important;
+    border-color: rgba(230, 190, 120, 0.3) !important;
+    box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-header,
+    .main-header-menu .menu-link {
+        transition: none;
+    }
+}

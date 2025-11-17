@@ -205,3 +205,234 @@ require_once ASTRA_THEME_DIR . 'inc/core/markup/class-astra-markup.php';
 require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-filters.php';
 require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-hooks.php';
 require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-functions.php';
+
+/**
+ * Helpers to detect whether a dedicated SEO plugin is already handling metadata.
+ *
+ * @since 1.0.0
+ *
+ * @return bool
+ */
+function tanaserobertbroker_has_seo_plugin() {
+       return ( defined( 'WPSEO_VERSION' )
+               || defined( 'RANK_MATH_VERSION' )
+               || defined( 'AIOSEO_VERSION' )
+               || defined( 'SEOPRESS_VERSION' ) );
+}
+
+/**
+ * Output baseline meta tags for search engines and social networks when a
+ * third-party SEO plugin is not active.
+ */
+function tanaserobertbroker_output_meta_tags() {
+       if ( is_admin() || tanaserobertbroker_has_seo_plugin() ) {
+               return;
+       }
+
+       $description = '';
+
+       if ( is_singular() ) {
+               $post = get_queried_object();
+
+               if ( $post instanceof WP_Post ) {
+                       if ( ! empty( $post->post_excerpt ) ) {
+                               $description = $post->post_excerpt;
+                       } else {
+                               $description = wp_trim_words( wp_strip_all_tags( $post->post_content ), 32, '…' );
+                       }
+               }
+       }
+
+       if ( empty( $description ) ) {
+               $description = get_bloginfo( 'description', 'display' );
+       }
+
+       $description = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $description ) ) );
+
+       $title = wp_get_document_title();
+       $image = '';
+
+       if ( is_singular() && has_post_thumbnail() ) {
+               $image = wp_get_attachment_image_url( get_post_thumbnail_id(), 'full' );
+       } elseif ( has_custom_logo() ) {
+               $logo_id = get_theme_mod( 'custom_logo' );
+               if ( $logo_id ) {
+                       $image = wp_get_attachment_image_url( $logo_id, 'full' );
+               }
+       }
+
+       global $wp;
+       $path        = isset( $wp->request ) ? $wp->request : '';
+       $current_url = is_singular() ? get_permalink() : home_url( user_trailingslashit( $path ) );
+
+       if ( $description ) {
+               printf( '<meta name="description" content="%s" />' . "\n", esc_attr( $description ) );
+       }
+
+       if ( $current_url ) {
+               printf( '<link rel="canonical" href="%s" />' . "\n", esc_url( $current_url ) );
+       }
+
+       printf( '<meta property="og:title" content="%s" />' . "\n", esc_attr( $title ) );
+
+       if ( $description ) {
+               printf( '<meta property="og:description" content="%s" />' . "\n", esc_attr( $description ) );
+       }
+
+       if ( $current_url ) {
+               printf( '<meta property="og:url" content="%s" />' . "\n", esc_url( $current_url ) );
+       }
+
+       echo '<meta property="og:site_name" content="' . esc_attr( get_bloginfo( 'name' ) ) . '" />' . "\n";
+       echo '<meta property="og:type" content="' . esc_attr( is_singular() ? 'article' : 'website' ) . '" />' . "\n";
+
+       if ( $image ) {
+               printf( '<meta property="og:image" content="%s" />' . "\n", esc_url( $image ) );
+               echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+               printf( '<meta name="twitter:image" content="%s" />' . "\n", esc_url( $image ) );
+       } else {
+               echo '<meta name="twitter:card" content="summary" />' . "\n";
+       }
+
+       printf( '<meta name="twitter:title" content="%s" />' . "\n", esc_attr( $title ) );
+
+       if ( $description ) {
+               printf( '<meta name="twitter:description" content="%s" />' . "\n", esc_attr( $description ) );
+       }
+}
+add_action( 'wp_head', 'tanaserobertbroker_output_meta_tags', 1 );
+
+/**
+ * Encourage browsers to establish font connections as early as possible.
+ *
+ * @param array  $urls          List of resource hints.
+ * @param string $relation_type Relation type the URLs are printed for.
+ */
+function tanaserobertbroker_resource_hints( $urls, $relation_type ) {
+       if ( 'preconnect' === $relation_type ) {
+               $urls[] = array(
+                       'href'        => 'https://fonts.gstatic.com',
+                       'crossorigin' => 'anonymous',
+               );
+       }
+
+       if ( 'dns-prefetch' === $relation_type ) {
+               $urls[] = '//fonts.googleapis.com';
+       }
+
+       return $urls;
+}
+add_filter( 'wp_resource_hints', 'tanaserobertbroker_resource_hints', 10, 2 );
+
+/**
+ * Make sure lazy loading stays enabled for heavy elements to preserve page speed
+ * even if a plugin disables it globally.
+ *
+ * @param bool   $default Default lazy-loading state.
+ * @param string $tag_name The element name (img, iframe, etc.).
+ * @param string $context  Context in which the tag is rendered.
+ */
+function tanaserobertbroker_enable_lazy_loading( $default, $tag_name, $context ) {
+       unset( $context );
+
+       if ( in_array( $tag_name, array( 'img', 'iframe' ), true ) ) {
+               return true;
+       }
+
+       return $default;
+}
+add_filter( 'wp_lazy_loading_enabled', 'tanaserobertbroker_enable_lazy_loading', 10, 3 );
+
+/**
+ * Remove non-essential assets that commonly trigger PageSpeed Insights warnings
+ * about unused JavaScript and CSS.
+ */
+function tanaserobertbroker_strip_unused_assets() {
+       // Disable emoji scripts and styles on the front end.
+       remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+       remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+       remove_action( 'wp_print_styles', 'print_emoji_styles' );
+       remove_action( 'admin_print_styles', 'print_emoji_styles' );
+
+       // Remove the oEmbed discovery script on the front end.
+       wp_deregister_script( 'wp-embed' );
+
+       // Drop block editor styles when classic layouts are used on the front end.
+       wp_dequeue_style( 'wp-block-library' );
+       wp_dequeue_style( 'wp-block-library-theme' );
+       wp_dequeue_style( 'global-styles' );
+}
+add_action( 'wp_enqueue_scripts', 'tanaserobertbroker_strip_unused_assets', 20 );
+
+/**
+ * Prevent loading the Dashicons font for visitors to reduce render-blocking CSS.
+ */
+function tanaserobertbroker_remove_dashicons_for_guests() {
+       if ( is_user_logged_in() ) {
+               return;
+       }
+
+       wp_dequeue_style( 'dashicons' );
+}
+add_action( 'wp_enqueue_scripts', 'tanaserobertbroker_remove_dashicons_for_guests', 100 );
+
+/**
+ * Defer non-critical scripts to improve total blocking time without altering
+ * dependencies like jQuery.
+ *
+ * @param string $tag    The `<script>` tag for the enqueued script.
+ * @param string $handle The script's registered handle.
+ * @param string $src    The script source.
+ *
+ * @return string Possibly modified script tag.
+ */
+function tanaserobertbroker_defer_scripts( $tag, $handle, $src ) {
+       if ( is_admin() || is_customize_preview() ) {
+               return $tag;
+       }
+
+       $deferred_handles = array(
+               'astra-theme-js',
+               'astra-addon-js',
+               'astra-navigation',
+               'astra-scroll-to-top',
+               'comment-reply',
+               'wp-custom-header',
+       );
+
+       // Do not defer jQuery or its dependencies.
+       if ( in_array( $handle, array( 'jquery', 'jquery-core', 'jquery-migrate' ), true ) ) {
+               return $tag;
+       }
+
+       if ( in_array( $handle, $deferred_handles, true ) ) {
+               return sprintf( '<script src="%s" defer></script>' . "\n", esc_url( $src ) );
+       }
+
+       return $tag;
+}
+add_filter( 'script_loader_tag', 'tanaserobertbroker_defer_scripts', 10, 3 );
+
+/**
+ * Improve Largest Contentful Paint by prioritizing the first rendered image.
+ *
+ * @param array        $attr       Attributes for the image markup.
+ * @param WP_Post      $attachment Image attachment object.
+ * @param string|int[] $size       Requested size.
+ *
+ * @return array Filtered attributes.
+ */
+function tanaserobertbroker_prioritize_first_image( $attr, $attachment, $size ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
+       static $seen_first_image = false;
+
+       if ( is_admin() || $seen_first_image ) {
+               return $attr;
+       }
+
+       $attr['fetchpriority'] = 'high';
+       $attr['loading']       = 'eager';
+       $seen_first_image      = true;
+
+       return $attr;
+}
+add_filter( 'wp_get_attachment_image_attributes', 'tanaserobertbroker_prioritize_first_image', 10, 3 );
