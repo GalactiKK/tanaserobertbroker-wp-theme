@@ -79,13 +79,17 @@ header#masthead,
 .main-header-bar,
 .ast-header-break-point .main-header-bar,
 .ast-header-sticky-active .main-header-bar,
+.ast-sticky-header-active .main-header-bar,
 .ast-theme-transparent-header .main-header-bar,
+.ast-theme-transparent-header .site-header,
 .ast-primary-header-bar,
 .ast-desktop .ast-primary-header,
 .ast-desktop .ast-primary-header-bar,
 .ast-mobile-header-wrap,
 .ast-above-header,
-.ast-below-header {
+.ast-below-header,
+.ast-header-sticked,
+.ast-header-sticked .main-header-bar {
     /* #E6BE78 @ 80% opacity keeps transparency while adding color */
     background-color: rgba(230, 190, 120, 0.8) !important;
     background-image: none !important;
