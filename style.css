@@ -77,9 +77,6 @@ Licensed under MIT ( https://github.com/WPTT/webfont-loader/blob/master/LICENSE 
 .site-header,
 header#masthead,
 .main-header-bar,
-.ast-header-break-point .main-header-bar,
-.ast-header-sticky-active .main-header-bar,
-.ast-sticky-header-active .main-header-bar,
 .ast-theme-transparent-header .main-header-bar,
 .ast-theme-transparent-header .site-header,
 .ast-primary-header-bar,
@@ -88,16 +85,26 @@ header#masthead,
 .ast-mobile-header-wrap,
 .ast-above-header,
 .ast-below-header,
-.ast-header-sticked,
-.ast-header-sticked .main-header-bar {
-    /* #E6BE78 @ 80% opacity keeps transparency while adding color */
-    background-color: rgba(230, 190, 120, 0.8) !important;
+body:not(.ast-header-sticked) .site-header,
+body:not(.ast-header-sticked) header#masthead,
+body:not(.ast-header-sticked) .main-header-bar {
+    /* Slightly lighter tint on initial load keeps the hero visible underneath */
+    background-color: rgba(230, 190, 120, 0.55) !important;
     background-image: none !important;
     box-shadow: none !important;
-    border-bottom: 1px solid rgba(230, 190, 120, 0.45) !important;
+    border-bottom: 1px solid rgba(230, 190, 120, 0.35) !important;
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.ast-header-sticky-active .main-header-bar,
+.ast-sticky-header-active .main-header-bar,
+.ast-header-sticked,
+.ast-header-sticked .main-header-bar {
+    /* Increase opacity slightly after scroll to preserve contrast */
+    background-color: rgba(230, 190, 120, 0.8) !important;
+    border-bottom: 1px solid rgba(230, 190, 120, 0.45) !important;
 }
 
 .site-header .site-branding a,
@@ -140,7 +147,7 @@ header#masthead,
 .ast-header-break-point .main-header-menu,
 .ast-header-break-point .main-header-bar,
 .ast-header-break-point .ast-mobile-header-wrap {
-    background-color: rgba(230, 190, 120, 0.92) !important;
+    background-color: rgba(230, 190, 120, 0.9) !important;
 }
 
 .ast-header-break-point .main-header-menu .menu-item {
